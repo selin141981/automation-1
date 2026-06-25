@@ -49,6 +49,8 @@ if "qa" not in st.session_state:
     st.session_state.qa = [dict(x) for x in DEFAULT_QA]
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "is_bot_active" not in st.session_state:
+    st.session_state.is_bot_active = True
 
 # ---------- כותרת עליונה ----------
 st.markdown('<div class="badge">● בלי קוד · מוכן בכמה דקות</div>', unsafe_allow_html=True)
@@ -94,13 +96,26 @@ def fill(text):
 
 def bot_reply(message):
     m = message.strip().lower()
+
+    # 1. המשתמש מבקש לדבר עם נציג אנושי
+    if "נציג" in m or "אנושי" in m or "דבר עם מישהו" in m:
+        st.session_state.is_bot_active = False
+        return "העברתי את הפנייה שלך לנציג שירות אנושי 👩‍💻 נחזור אליך בהקדם!"
+
+    # 2. אם כבר הועבר לנציג — הבוט מפסיק לענות אוטומטית
+    if not st.session_state.is_bot_active:
+        return "הפנייה שלך נמצאת אצל נציג אנושי. (אפשר ללחוץ 'התחל שיחה מחדש' כדי לחזור לבוט.)"
+
+    # 3. חיפוש תשובה מתאימה לפי מילות המפתח
     for item in st.session_state.qa:
         words = [w.strip().lower() for w in item["keys"].split(",") if w.strip()]
         for w in words:
             if w and w in m:
                 return fill(item["ans"])
+
+    # 4. אם שום מילה לא התאימה — תשובת ברירת מחדל
     return ("לא בטוח/ה שהבנתי 🤔 אפשר לשאול על: שעות, מחירים, כתובת, קביעת תור.\n"
-            f"או להתקשר: {phone}")
+            "או לכתוב 'נציג' כדי לדבר עם בן אדם.")
 
 # =========== טור הצ'אט ===========
 with col_chat:
@@ -126,6 +141,11 @@ with col_chat:
     if sent and user_text.strip():
         st.session_state.messages.append({"role": "user", "content": user_text})
         st.session_state.messages.append({"role": "assistant", "content": bot_reply(user_text)})
+        st.rerun()
+
+    if st.button("🔄 התחל שיחה מחדש"):
+        st.session_state.messages = []
+        st.session_state.is_bot_active = True
         st.rerun()
 
     if st.button("🔄 התחל שיחה מחדש"):
