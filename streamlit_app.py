@@ -148,6 +148,3 @@ with col_chat:
         st.session_state.is_bot_active = True
         st.rerun()
 
-    if st.button("🔄 התחל שיחה מחדש"):
-        st.session_state.messages = []
-        st.rerun()
